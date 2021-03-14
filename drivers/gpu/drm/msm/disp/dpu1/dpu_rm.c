@@ -367,15 +367,25 @@ static int _dpu_rm_reserve_ctls(
 	int i = 0, j, num_ctls;
 	bool needs_split_display;
 
-	if (rm->has_active_ctls) {
+	/*
+	 * For non-CWB mode, each hw_intf needs its own hw_ctl to program its
+	 * control path.
+	 *
+	 * Hardcode num_ctls to 1 if CWB is enabled because in CWB, both the
+	 * writeback and real-time encoders must be driven by the same control
+	 * path
+	 */
+	if (top->cwb_enabled || rm->has_active_ctls)
 		num_ctls = 1;
 		needs_split_display = false;
 	} else {
 		/* each hw_intf needs its own hw_ctrl to program its control path */
 		num_ctls = top->num_intf;
 
+	if (rm->has_active_ctls)
+		needs_split_display = false;
+	else
 		needs_split_display = _dpu_rm_needs_split_display(top);
-	}
 
 	for (j = 0; j < ARRAY_SIZE(rm->ctl_blks); j++) {
 		const struct dpu_hw_ctl *ctl;
