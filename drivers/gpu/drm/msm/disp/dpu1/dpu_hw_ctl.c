@@ -548,6 +548,7 @@ static void dpu_hw_ctl_intf_cfg_v1(struct dpu_hw_ctl *ctx,
 	u32 cdm_active;
 	u32 intf_active;
 	u32 wb_active;
+	u32 cwb_active;
 	u32 dsc_active;
 	u32 merge_3d_active;
 
@@ -663,7 +664,6 @@ static void dpu_hw_ctl_reset_intf_cfg_v1(struct dpu_hw_ctl *ctx,
 		intf_active = DPU_REG_READ(c, CTL_INTF_ACTIVE);
 		intf_active &= ~BIT(cfg->intf - INTF_0);
 		DPU_REG_WRITE(c, CTL_INTF_ACTIVE, intf_active);
-
 		/* Unset this intf as master, if it is the current master */
 		/* TODO: Marijn: does this make any sense? */
 		intf_master = DPU_REG_READ(c, CTL_INTF_MASTER);
