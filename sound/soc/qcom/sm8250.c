@@ -14,12 +14,9 @@
 #include "common.h"
 #include "sdw.h"
 
-#define DRIVER_NAME "sm8250"
-#define MI2S_BCLK_RATE 1536000
-#define TDM_BCLK_RATE \
-	12288000 // SampleRate: 48kHz, SlotLength: 32bits, SlotNumber: 8
-// 11289600
-///#define TDM_BCLK_RATE 11289600
+#define DRIVER_NAME		"sm8250"
+#define MI2S_BCLK_RATE		1536000
+#define TDM_BCLK_RATE		12288000 // SampleRate: 48kHz, SlotLength: 32bits, SlotNumber: 8
 
 static unsigned int tdm_slot_offset[8] = { 0, 4, 8, 12, 16, 20, 24, 28 };
 
@@ -103,6 +100,7 @@ static int sm8250_be_hw_params_fixup(struct snd_soc_pcm_runtime *rtd,
 
 	rate->min = rate->max = 48000;
 	channels->min = channels->max = 4;
+	snd_mask_set_format(fmt, SNDRV_PCM_FORMAT_S16_LE);
 
 	return 0;
 }
@@ -137,14 +135,15 @@ static int sm8250_snd_startup(struct snd_pcm_substream *substream)
 		break;
 	case TERTIARY_TDM_RX_0:
 		codec_dai_fmt |= SND_SOC_DAIFMT_NB_NF | SND_SOC_DAIFMT_DSP_A;
-		snd_soc_dai_set_sysclk(
-			cpu_dai, Q6AFE_LPASS_CLK_ID_TER_TDM_IBIT, TDM_BCLK_RATE,
-			SNDRV_PCM_STREAM_PLAYBACK); //faulty rate: 11289600
+		snd_soc_dai_set_sysclk(cpu_dai,
+			Q6AFE_LPASS_CLK_ID_TER_TDM_IBIT,
+			TDM_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK); //faulty rate: 11289600
 
 		for_each_rtd_codec_dais(rtd, j, codec_dai) {
 			ret = snd_soc_dai_set_fmt(codec_dai, codec_dai_fmt);
-			snd_soc_dai_set_sysclk(codec_dai, 0, TDM_BCLK_RATE,
-					       SNDRV_PCM_STREAM_PLAYBACK);
+			snd_soc_dai_set_sysclk(codec_dai,
+				0,
+				TDM_BCLK_RATE, SNDRV_PCM_STREAM_PLAYBACK);
 			if (ret < 0) {
 				dev_err(rtd->dev, "TDM fmt err:%d\n", ret);
 				return ret;
