@@ -223,6 +223,7 @@ struct nanosic_803_priv {
 	int slot_mapping[3];
 	bool finger_down;
 	bool caps_led_on;
+	struct led_classdev backlight_led;
 	bool caps_as_second_layer_key;
 	bool second_layer_active;
 	enum {
@@ -440,6 +441,28 @@ static void nanosic_led_blink_worker(struct work_struct *work)
 		nanosic_set_caps_led_state(nanosic_dev, nanosic_dev->caps_led_on);
 		break;
 	}
+}
+
+// Backlight control function
+static int nanosic_backlight_set(struct led_classdev *led_cdev,
+                                enum led_brightness brightness)
+{
+    struct nanosic_803_priv *nanosic_dev = container_of(led_cdev, struct nanosic_803_priv, backlight_led);
+    u8 cmd[14] = {
+        0x32, 0x00, 0x4E, 0x31, 0x80, 0x38, 0x23, 0x01,
+        (u8)brightness,   // value byte
+        0x00,             // checksum (to be calculated)
+        0x00, 0x00, 0x00, 0x00
+    };
+    int i;
+
+    // Calculate checksum (bytes 3 to 9 - indices 2 to 8)
+    cmd[9] = 0;
+    for (i = 2; i <= 8; i++)
+        cmd[9] += cmd[i];
+
+    // Send command
+    return nanosic_i2c_write(nanosic_dev, cmd, sizeof(cmd));
 }
 
 static void nanosic_sync_caps_led(struct work_struct *work)
@@ -1073,6 +1096,18 @@ static int nanosic_803_probe(struct i2c_client *client)
 	nanosic_dev->wq = create_singlethread_workqueue("nanosic_wq");
 	INIT_WORK(&nanosic_dev->led_work, nanosic_sync_caps_led);
 	INIT_DELAYED_WORK(&nanosic_dev->led_blink_work, nanosic_led_blink_worker);
+
+	// Initialize and register backlight LED
+	nanosic_dev->backlight_led.name = "nanosic::backlight";
+	nanosic_dev->backlight_led.brightness_set_blocking = nanosic_backlight_set;
+	nanosic_dev->backlight_led.max_brightness = 100;
+	nanosic_dev->backlight_led.brightness = 0;
+
+	ret = devm_led_classdev_register(dev, &nanosic_dev->backlight_led);
+	if (ret) {
+		dev_err(dev, "Failed to register backlight LED\n");
+		return ret;
+	}
 
 	// Get GPIOs
 	nanosic_dev->reset_gpio = devm_gpiod_get(dev, "reset", GPIOD_OUT_LOW);
