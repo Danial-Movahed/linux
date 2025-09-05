@@ -801,7 +801,59 @@ static int nanosic_803_probe(struct i2c_client *client)
 	return 0;
 }
 
-//static DEFINE_SIMPLE_DEV_PM_OPS(nanosic_803_pm_ops, nanosic_803_suspend, nanosic_803_resume);
+static int nanosic_803_suspend(struct device *dev)
+{
+	struct nanosic_803_priv *nanosic_dev = dev_get_drvdata(dev);
+	int ret;
+
+	// Actually de-init device
+	gpiod_set_value(nanosic_dev->reset_gpio, 0);
+	gpiod_set_value(nanosic_dev->sleep_gpio, 0);
+	gpiod_set_value(nanosic_dev->vdd_gpio, 0);
+
+	// Turn the regulators off
+	ret = regulator_disable(nanosic_dev->vdd_1v8);
+	if (ret) {
+		dev_err(dev, "Failed to disable 1.8V regulator\n");
+		return ret;
+	}
+
+	ret = regulator_disable(nanosic_dev->vdd_3v3);
+	if (ret) {
+		dev_err(dev, "Failed to disable 3.3V regulator\n");
+		return ret;
+	}
+	return 0;
+}
+
+static int nanosic_803_resume(struct device *dev)
+{
+	struct nanosic_803_priv *nanosic_dev = dev_get_drvdata(dev);
+	int ret;
+
+	// Turn the regulators on
+	ret = regulator_enable(nanosic_dev->vdd_1v8);
+	if (ret) {
+		dev_err(dev, "Failed to disable 1.8V regulator\n");
+		return ret;
+	}
+
+	ret = regulator_enable(nanosic_dev->vdd_3v3);
+	if (ret) {
+		dev_err(dev, "Failed to disable 3.3V regulator\n");
+		return ret;
+	}
+
+	// Reset the chip
+	nanosic_803_reset(nanosic_dev);
+
+	// Wake up the chip
+	nanosic_803_wakeup(nanosic_dev);
+
+	return 0;
+}
+
+static DEFINE_SIMPLE_DEV_PM_OPS(nanosic_803_pm_ops, nanosic_803_suspend, nanosic_803_resume);
 
 static const struct of_device_id __maybe_unused nanosic_803_of_match[] = {
 	{ .compatible = "nanosic,803", },
