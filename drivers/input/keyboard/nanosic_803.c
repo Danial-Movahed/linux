@@ -813,7 +813,7 @@ static struct i2c_driver nanosic_803_driver = {
 	.driver	= {
 		.name = "nanosic_803",
 		.of_match_table = of_match_ptr(nanosic_803_of_match),
-		.pm = pm_sleep_ptr(&nanosic_803_pm_ops),
+		//.pm = pm_sleep_ptr(&nanosic_803_pm_ops),
 	},
 	.probe = nanosic_803_probe,
 };
