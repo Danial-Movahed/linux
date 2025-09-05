@@ -23,6 +23,7 @@
 #include <linux/debugfs.h>
 #include <linux/uaccess.h>
 #include <linux/ctype.h>
+#include <linux/leds.h>
 
 #define I2C_DATA_LENGTH_READ (68)
 #define I2C_DATA_LENGTH_WRITE (66)
