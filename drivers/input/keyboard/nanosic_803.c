@@ -687,7 +687,7 @@ static int nanosic_803_probe(struct i2c_client *client)
 	INIT_WORK(&nanosic_dev->led_work, nanosic_sync_caps_led);
 
 	// Initialize and register backlight LED
-	nanosic_dev->backlight_led.name = "nanosic::backlight";
+	nanosic_dev->backlight_led.name = "nanosic::kbd_backlight";
 	nanosic_dev->backlight_led.brightness_set_blocking = nanosic_backlight_set;
 	nanosic_dev->backlight_led.max_brightness = 100;
 	nanosic_dev->backlight_led.brightness = 0;
